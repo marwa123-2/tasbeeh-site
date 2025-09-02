@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>سبحة ورحمة — Tasbeeh Pro</title>
+  <style>
+    :root{
+      --bg1:#0b2a2a; /* داكن أخضر مزرق */
+      --bg2:#021312;
+      --accent:#00d1b2; /* فيروز */
+      --accent-2:#ffd166; /* دهبي */
+      --text:#ffffff;
+      --muted:#b8d8d8;
+      --card:rgba(255,255,255,0.08);
+      --card-2:rgba(255,255,255,0.04);
+      --shadow:0 12px 30px rgba(0,0,0,.35);
+    }
+    /* وضع نهاري */
+    .day{
+      --bg1:#eaf7f6;
+      --bg2:#c9f1ee;
+      --text:#0a1f1f;
+      --muted:#365555;
+      --card:rgba(255,255,255,.75);
+      --card-2:rgba(255,255,255,.55);
+      --accent:#0aa27d;
+      --accent-2:#c59b00;
+    }
+
+    html,body{height:100%;}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Tahoma, Arial, sans-serif; color:var(--text);
+      background: radial-gradient(1200px 700px at 50% -10%, var(--bg2), var(--bg1));
+      overflow-x:hidden;
+    }
+
+    /* خلفية نجوم متلّمعة */
+    .stars, .stars:before, .stars:after{
+      content:""; position:fixed; inset:0; pointer-events:none;
+      background-repeat: repeat;
+      background-image: radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,.8), rgba(255,255,255,0)),
+                        radial-gradient(2px 2px at 80px 90px, rgba(255,255,255,.7), rgba(255,255,255,0)),
+                        radial-gradient(1.5px 1.5px at 50px 120px, rgba(255,255,255,.6), rgba(255,255,255,0));
+      animation: twinkle 10s linear infinite;
+      opacity:.25;
+      z-index:0;
+    }
+    .stars:before{animation-duration: 14s; opacity:.22;}
+    .stars:after{animation-duration: 20s; opacity:.18;}
+    @keyframes twinkle{0%{transform:translateY(0)} 100%{transform:translateY(50px)}}
+
+    /* شريط علوي */
+    .topbar{position:sticky; top:0; z-index:10; background:var(--card); backdrop-filter: blur(8px); padding:10px 14px; display:flex; gap:10px; align-items:center; justify-content:space-between; box-shadow: var(--shadow)}
+    .brand{display:flex; align-items:center; gap:10px}
+    .brand .logo{width:36px; height:36px; border-radius:12px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 8px 18px rgba(0,0,0,.25)}
+    .brand h1{font-size:18px; margin:0}
+
+    .nav{display:flex; gap:8px}
+    .btn{border:0; border-radius:14px; padding:10px 14px; font-size:14px; cursor:pointer; background:var(--card-2); color:var(--text); box-shadow: 0 6px 14px rgba(0,0,0,.18); transition:.2s}
+    .btn:hover{transform: translateY(-1px)}
+    .btn.primary{background: linear-gradient(135deg, var(--accent), #33e0c7); color:#072b2b; font-weight:700}
+    .btn.ghost{background: transparent; border:1px solid rgba(255,255,255,.2)}
+    .btn.danger{background: #e85b81; color:#fff}
+
+    .layout{max-width:900px; margin:24px auto; padding:0 16px; position:relative; z-index:1}
+
+    .card{background:var(--card); border-radius:20px; padding:18px; box-shadow: var(--shadow); margin-bottom:16px}
+    .row{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
+    .row > *{flex:1 1 auto}
+
+    label{font-size:13px; color:var(--muted)}
+    select, input[type="number"], input[type="text"]{width:100%; padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.18); background:var(--card-2); color:var(--text)}
+
+    /* السبحة */
+    .tasbeeh-wrap{display:grid; grid-template-columns: 1fr; place-items:center; gap:16px}
+    .ring{position:relative; width:220px; height:220px}
+    .ring svg{transform:rotate(-90deg)}
+    .ring .center{position:absolute; inset:0; display:grid; place-items:center}
+    .digits{font-size:40px; font-weight:800}
+    .sub{font-size:13px; color:var(--muted)}
+    .big-btn{display:block; width:220px; height:220px; border-radius:50%; position:absolute; inset:0; border:none; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.25), rgba(255,255,255,0) 60%), linear-gradient(135deg, var(--accent), #33e0c7); opacity:0;}
+    .big-btn:active{opacity:.12}
+
+    .controls{display:flex; gap:10px; justify-content:center}
+
+    /* البطاقات القابلة للسحب */
+    .cards{position:relative; overflow:hidden}
+    .card-item{background:var(--card); border-radius:18px; padding:16px; box-shadow: var(--shadow); touch-action: pan-y; user-select:none}
+    .card-item h3{margin:0 0 8px}
+
+    /* شريط آيات متحرك */
+    .marquee{position:fixed; bottom:0; left:0; right:0; z-index:9; background: var(--card); backdrop-filter: blur(6px); padding:10px; border-top:1px solid rgba(255,255,255,.15);}
+    .marquee .line{white-space:nowrap; overflow:hidden}
+    .marquee .text{display:inline-block; padding-inline:100%; animation: scroll 24s linear infinite}
+    @keyframes scroll{0%{transform:translateX(0)} 100%{transform:translateX(-100%)}}
+
+    /* توست دعاء */
+    .toast{position:fixed; right:12px; bottom:70px; background:rgba(0,0,0,.7); color:#fff; padding:12px 14px; border-radius:14px; opacity:0; transform: translateY(10px); transition:.25s; max-width:80vw}
+    .toast.show{opacity:1; transform: translateY(0)}
+
+    /* مودال الإهداء */
+    .modal{position:fixed; inset:0; background: rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:20}
+    .modal .box{background:var(--card); border-radius:20px; padding:20px; width:min(92vw, 520px); text-align:center; box-shadow: var(--shadow)}
+    .modal .box h2{margin-top:0}
+
+    /* جداول الإحصائيات */
+    .stats{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+    .stat{background:var(--card); border-radius:16px; padding:12px; text-align:center}
+    .stat .num{font-size:28px; font-weight:800}
+
+    @media (max-width:560px){
+      .stats{grid-template-columns:1fr}
+    }
+  </style>
+  </head>
+<body>
+  <!-- هنا بيظهر المحتوى للمستخدم -->
+  <h1>🌸 السبحة الإلكترونية 🌸</h1>
+  <div class="tasbeeh-container">
+    <!-- الأزرار والعدادات -->
+  </div>
+
+  <!-- هنا الكود اللي بيشغل العدادات -->
+  <script>
+    // كود الجافاسكريبت
+  </script>
+  <body>
+    <!-- قسم الأدعية -->
+<div class="duaa-card">
+  <h2>🌿 دعاء اليوم 🌿</h2>
+  <p id="duaa-text"></p>
+</div>
+
+<script>
+  // مجموعة الأدعية
+  const ad3eya = [
+    "اللهم اجعل هذا الموقع صدقة جارية ورحمة ونور ومغفرة لروح من نحب 🤍",
+    "اللهم اغفر لنا وارحمنا واهدنا سواء السبيل.",
+    "اللهم اجعل القرآن ربيع قلوبنا ونور صدورنا.",
+    "اللهم ارزقنا حسن الخاتمة والقبول."
+  ];
+
+  // اختيار دعاء عشوائي
+  const duaaElement = document.getElementById("duaa-text");
+  const randomDuaa = ad3eya[Math.floor(Math.random() * ad3eya.length)];
+  duaaElement.textContent = randomDuaa;
+</script>
+
+<style>
+  .duaa-card {
+    margin: 20px auto;
+    padding: 15px;
+    max-width: 400px;
+    background: #f9f9f9;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+  .duaa-card h2 {
+    color: #3a7d44;
+    margin-bottom: 10px;
+  }
+  .duaa-card p {
+    font-size: 18px;
+    line-height: 1.6;
+    color: #333;
+  }
+</style>
+  </body>
+  <!-- قسم الحديث -->
+<div class="hadith-card">
+  <h2>📖 حديث اليوم 📖</h2>
+  <p id="hadith-text"></p>
+</div>
+
+<script>
+  // مجموعة أحاديث
+  const ahadith = [
+    "قال رسول الله ﷺ: من سلك طريقًا يلتمس فيه علمًا سهّل الله له به طريقًا إلى الجنة.",
+    "قال رسول الله ﷺ: تبسمك في وجه أخيك صدقة.",
+    "قال رسول الله ﷺ: خيركم من تعلم القرآن وعلمه.",
+    "قال رسول الله ﷺ: من لا يَرحم لا يُرحم."
+  ];
+
+  // اختيار حديث عشوائي
+  const hadithElement = document.getElementById("hadith-text");
+  const randomHadith = ahadith[Math.floor(Math.random() * ahadith.length)];
+  hadithElement.textContent = randomHadith;
+</script>
+
+<style>
+  .hadith-card {
+    margin: 20px auto;
+    padding: 15px;
+    max-width: 500px;
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+  .hadith-card h2 {
+    color: #6b4f9b;
+    margin-bottom: 10px;
+  }
+  .hadith-card p {
+    font-size: 18px;
+    line-height: 1.6;
+    color: #444;
+  }
+</style>
+
+</html>
+</head>
+<body>
+  <div class="stars"></div>
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <h1>سبحة ورحمة</h1>
+    </div>
+    <div class="nav">
+      <button class="btn ghost" id="tabTasbeeh">السبحة</button>
+      <button class="btn ghost" id="tabTribute">إهداء</button>
+      <button class="btn" id="toggleTheme" title="وضع نهاري/ليلي">☀️/🌙</button>
+      <button class="btn" id="shareBtn">مشاركة</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- شاشة السبحة -->
+    <section id="viewTasbeeh">
+      <div class="card">
+        <div class="row">
+          <div style="flex:1 1 180px">
+            <label>اختاري الذكر</label>
+            <select id="zekrSelect">
+              <option value="سبحان الله">سبحان الله</option>
+              <option value="الحمد لله">الحمد لله</option>
+              <option value="الله أكبر">الله أكبر</option>
+              <option value="لا إله إلا الله">لا إله إلا الله</option>
+              <option value="أستغفر الله">أستغفر الله</option>
+            </select>
+          </div>
+          <div style="flex:1 1 130px">
+            <label>الهدف لكل دورة</label>
+            <input id="targetInput" type="number" min="10" step="1" value="33" />
+          </div>
+          <div style="flex:1 1 160px">
+            <label>الصوت</label>
+            <select id="soundSelect">
+              <option value="beep">Beep داخلي</option>
+              <option value="mp3-1">ملف mp3 (sounds/click1.mp3)</option>
+              <option value="mp3-2">ملف mp3 (sounds/click2.mp3)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card tasbeeh-wrap">
+        <div class="ring" id="ring">
+          <svg width="220" height="220" viewBox="0 0 220 220">
+            <circle cx="110" cy="110" r="90" stroke="rgba(255,255,255,.15)" stroke-width="18" fill="none" />
+            <circle id="progressCircle" cx="110" cy="110" r="90" stroke="var(--accent-2)" stroke-width="18" stroke-linecap="round" fill="none" stroke-dasharray="565.48" stroke-dashoffset="565.48" />
+          </svg>
+          <button class="big-btn" id="hitArea" aria-label="سبّح"></button>
+          <div class="center">
+            <div class="digits" id="counter">0</div>
+            <div class="sub"><span id="currentZekr">سبحان الله</span> • <span id="progressText">0 / 33</span></div>
+          </div>
+        </div>
+        <div class="controls">
+          <button class="btn" id="decBtn">–</button>
+          <button class="btn primary" id="tasbeehBtn">سبّح</button>
+          <button class="btn danger" id="resetBtn">إعادة</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0">بطاقات أدعية — اسحبي يمين/شمال</h3>
+        <div class="cards">
+          <div class="card-item" id="duaCard"><h3>دعاء</h3><p id="duaText"></p></div>
+        </div>
+        <div class="controls" style="margin-top:10px">
+          <button class="btn" id="prevDua">السابق</button>
+          <button class="btn" id="nextDua">التالي</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 8px">إحصائيات</h3>
+        <div class="stats">
+          <div class="stat"><div class="num" id="todayTotal">0</div><div class="sub">عدد اليوم</div></div>
+          <div class="stat"><div class="num" id="lifeTotal">0</div><div class="sub">إجمالي منذ البداية</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- شاشة الإهداء -->
+    <section id="viewTribute" style="display:none">
+      <div class="card">
+        <h2 style="margin-top:0;color:var(--accent-2)">رحمةً ونورًا ومغفرةً لروح <span id="tributeName">فلانة</span> 🤍</h2>
+        <p>اللهم اغفر لها وارحمها، وعافها واعفُ عنها، اللهم اجعل قبرها روضةً من رياض الجنة، واجعل هذا العمل صدقةً جاريةً لها.</p>
+      </div>
+      <div class="card">
+        <div class="row">
+          <div>
+            <label>اسم من تهدين لها الموقع</label>
+            <input id="nameInput" type="text" placeholder="اكتبي الاسم هنا" />
+          </div>
+          <div style="flex:0 0 auto; align-self:end">
+            <button class="btn primary" id="saveName">حفظ الإسم</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">أدعية للميت</h3>
+        <ul>
+          <li>اللهم اغفر لها وارحمها وتجاوز عن سيئاتها، واجعل مثواها الجنة.</li>
+          <li>اللهم نوّر قبرها واجعله روضةً من رياض الجنة، ولا تجعله حفرةً من حفر النار.</li>
+          <li>اللهم اجعل القرآن العظيم شفيعًا لها يوم اللقاء.</li>
+          <li>اللهم ارحم موتانا وموتى المسلمين أجمعين.</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <!-- توست ورسائل -->
+  <div class="toast" id="toast"></div>
+
+  <!-- شريط آيات -->
+  <div class="marquee" aria-hidden="true">
+    <div class="line"><div class="text" id="ayatLine">﴿فَاذْكُرُونِي أَذْكُرْكُمْ﴾ • ﴿الَّذِينَ آمَنُوا وَتَطْمَئِنُّ قُلُوبُهُم بِذِكْرِ اللَّهِ أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ﴾ • ﴿رَبَّنَا لَا تُزِغْ قُلُوبَنَا بَعْدَ إِذْ هَدَيْتَنَا﴾</div></div>
+  </div>
+
+  <!-- مودال ترحيب/إهداء -->
+  <div class="modal" id="welcomeModal">
+    <div class="box">
+      <h2>نويتُ هذا العمل صدقةً جارية 🤍</h2>
+      <p>رحمةً ونورًا ومغفرةً لروح <strong id="modalName">فلانة</strong>. اجعل نيتك الآن ذكر الله والدعاء.</p>
+      <button class="btn primary" id="closeModal">ابدئي الذكر</button>
+    </div>
+  </div>
+
+  <script>
+    // ===== بيانات أساسية =====
+    const stateKey = 'tasbeeh_pro_state_v1';
+    const todayKey = new Date().toISOString().slice(0,10);
+
+    const duas = [
+      'اللهم اغفر لها وارحمها وتجاوز عنها واجعل مثواها الجنة',
+      'سبحان الله وبحمده، سبحان الله العظيم',
+      'لا إله إلا أنت سبحانك إني كنت من الظالمين',
+      'رب اغفر لي ولوالديَّ وللمؤمنين يوم يقوم الحساب',
+      'اللهم اجعلها في روضة من رياض الجنة، واجعل قبرها نورًا',
+      'اللهم صلِّ وسلم على نبينا محمد',
+      'أستغفر الله العظيم الذي لا إله إلا هو الحي القيوم وأتوب إليه'
+    ];
+
+    const ayat = [
+      '﴿فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ﴾',
+      '﴿أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ﴾',
+      '﴿رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الآخِرَةِ حَسَنَةً﴾',
+      '﴿رَبِّ زِدْنِي عِلْمًا﴾',
+      '﴿وَقُل رَّبِّ ارْحَمْهُمَا كَمَا رَبَّيَانِي صَغِيرًا﴾'
+    ];
+
+    // ===== عناصر DOM =====
+    const el = (id)=>document.getElementById(id);
+    const counterEl = el('counter');
+    const tasbeehBtn = el('tasbeehBtn');
+    const hitArea = el('hitArea');
+    const decBtn = el('decBtn');
+    const resetBtn = el('resetBtn');
+    const zekrSelect = el('zekrSelect');
+    const targetInput = el('targetInput');
+    const soundSelect = el('soundSelect');
+    const currentZekr = el('currentZekr');
+    const progressText = el('progressText');
+    const progressCircle = el('progressCircle');
+    const todayTotalEl = el('todayTotal');
+    const lifeTotalEl = el('lifeTotal');
+    const toast = el('toast');
+    const duaCard = el('duaCard');
+    const duaText = el('duaText');
+    const nextDua = el('nextDua');
+    const prevDua = el('prevDua');
+    const tabTasbeeh = el('tabTasbeeh');
+    const tabTribute = el('tabTribute');
+    const viewTasbeeh = el('viewTasbeeh');
+    const viewTribute = el('viewTribute');
+    const nameInput = el('nameInput');
+    const saveName = el('saveName');
+    const tributeName = el('tributeName');
+    const modalName = el('modalName');
+    const welcomeModal = el('welcomeModal');
+    const closeModal = el('closeModal');
+    const toggleTheme = el('toggleTheme');
+    const shareBtn = el('shareBtn');
+    const ayatLine = el('ayatLine');
+
+    // إعداد الصوت — Beep داخلي + دعم ملفات mp3 إذا توفرت
+    let audioCtx; // يُنشأ عند أول استخدام لتجنب قيود المتصفح
+    function playBeep(){
+      try{
+        if(!audioCtx){ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = 650;
+        g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.08, audioCtx.currentTime + 0.005);
+        g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.05);
+        o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.06);
+      }catch(e){ /* تجاهل */ }
+    }
+    const mp3Map = {
+      'mp3-1': new Audio('sounds/click1.mp3'),
+      'mp3-2': new Audio('sounds/click2.mp3')
+    };
+    function playClick(){
+      const sel = soundSelect.value;
+      if(sel === 'beep'){ playBeep(); return; }
+      const a = mp3Map[sel];
+      if(a){ a.currentTime = 0; a.play().catch(()=>playBeep()); }
+      else{ playBeep(); }
+    }
+
+    // حالة التطبيق
+    const defaultState = {
+      name: 'فلانة',
+      selectedZekr: 'سبحان الله',
+      target: 33,
+      count: 0,
+      totals: { life: 0, days: { [todayKey]: 0 } },
+      theme: 'night',
+      duaIndex: 0
+    };
+    function loadState(){
+      try{ return Object.assign({}, defaultState, JSON.parse(localStorage.getItem(stateKey)||'{}')); }
+      catch{ return {...defaultState}; }
+    }
+    let S = loadState();
+
+    // تحديث واجهة
+    function saveState(){ localStorage.setItem(stateKey, JSON.stringify(S)); }
+
+    function refreshUI(){
+      counterEl.textContent = S.count;
+      currentZekr.textContent = S.selectedZekr;
+      targetInput.value = S.target;
+      zekrSelect.value = S.selectedZekr;
+      tributeName.textContent = S.name; modalName.textContent = S.name;
+      nameInput.value = S.name;
+      todayTotalEl.textContent = (S.totals.days[todayKey]||0);
+      lifeTotalEl.textContent = S.totals.life;
+      updateProgress();
+      document.body.classList.toggle('day', S.theme==='day');
+      // آيات بالشريط
+      ayatLine.textContent = ayat.join(' • ');
+      // دعاء البطاقة
+      duaText.textContent = duas[S.duaIndex % duas.length];
+      progressText.textContent = `${S.count % S.target} / ${S.target}`;
+    }
+
+    const CIRC = 2 * Math.PI * 90; // r=90 => 565.48
+    function updateProgress(){
+      const mod = S.count % S.target;
+      const ratio = Math.min(1, mod / S.target);
+      const dash = CIRC * (1 - ratio);
+      progressCircle.setAttribute('stroke-dasharray', CIRC.toFixed(2));
+      progressCircle.setAttribute('stroke-dashoffset', dash.toFixed(2));
+    }
+
+    // توست بسيط
+    let toastTimer;
+    function showToast(msg){
+      toast.textContent = msg; toast.classList.add('show');
+      clearTimeout(toastTimer); toastTimer = setTimeout(()=>toast.classList.remove('show'), 2500);
+    }
+
+    // منطق العد
+    function inc(){
+      S.count++;
+      // إجمالي اليوم وإجمالي الحياة
+      S.totals.days[todayKey] = (S.totals.days[todayKey]||0) + 1;
+      S.totals.life++;
+      // كل 10 يظهر دعاء
+      if(S.count % 10 === 0){
+        const d = duas[Math.floor(Math.random()*duas.length)];
+        showToast(d);
+      }
+      playClick();
+      refreshUI(); saveState();
+    }
+    function dec(){ if(S.count>0){ S.count--; refreshUI(); saveState(); } }
+    function reset(){ S.count=0; refreshUI(); saveState(); }
+
+    // تبديل الشاشات
+    function showTasbeeh(){ viewTasbeeh.style.display=''; viewTribute.style.display='none'; }
+    function showTribute(){ viewTasbeeh.style.display='none'; viewTribute.style.display=''; }
+
+    // أحداث
+    tasbeehBtn.addEventListener('click', inc);
+    hitArea.addEventListener('click', inc);
+    decBtn.addEventListener('click', dec);
+    resetBtn.addEventListener('click', reset);
+
+    zekrSelect.addEventListener('change', (e)=>{ S.selectedZekr = e.target.value; S.count=0; refreshUI(); saveState(); });
+    targetInput.addEventListener('change', (e)=>{ const v = Math.max(1, parseInt(e.target.value||33)); S.target=v; refreshUI(); saveState(); });
+
+    // سحب للبطاقات
+    let startX=0, dx=0;
+    duaCard.addEventListener('touchstart', (e)=>{ startX = e.touches[0].clientX; dx=0; duaCard.style.transition='none'; }, {passive:true});
+    duaCard.addEventListener('touchmove', (e)=>{ dx = e.touches[0].clientX - startX; duaCard.style.transform = `translateX(${dx}px)`; }, {passive:true});
+    duaCard.addEventListener('touchend', ()=>{
+      duaCard.style.transition='transform .2s';
+      if(Math.abs(dx)>60){ S.duaIndex = (S.duaIndex + (dx<0?1:-1) + duas.length) % duas.length; duaText.textContent = duas[S.duaIndex]; }
+      duaCard.style.transform='translateX(0)'; saveState();
+    });
+    nextDua.addEventListener('click', ()=>{ S.duaIndex = (S.duaIndex+1)%duas.length; duaText.textContent = duas[S.duaIndex]; saveState(); });
+    prevDua.addEventListener('click', ()=>{ S.duaIndex = (S.duaIndex-1+duas.length)%duas.length; duaText.textContent = duas[S.duaIndex]; saveState(); });
+
+    // تبويب
+    tabTasbeeh.addEventListener('click', ()=>{ showTasbeeh(); });
+    tabTribute.addEventListener('click', ()=>{ showTribute(); });
+
+    // حفظ الاسم
+    saveName.addEventListener('click', ()=>{
+      const v = nameInput.value.trim(); if(!v) return showToast('اكتبي الاسم أولًا');
+      S.name = v; tributeName.textContent = v; modalName.textContent = v; saveState(); showToast('تم حفظ الإسم');
+    });
+
+    // ثيم الليل/النهار
+    function setTheme(t){ S.theme=t; document.body.classList.toggle('day', t==='day'); saveState(); }
+    toggleTheme.addEventListener('click', ()=>{ setTheme(S.theme==='day'?'night':'day'); });
+
+    // مشاركة
+    shareBtn.addEventListener('click', async ()=>{
+      const text = `أنا نسبّح الآن: ${S.selectedZekr} — العَدّ: ${S.count} (هدف: ${S.target}). رحمةً ونورًا لروح ${S.name}.`;
+      const url = location.href;
+      if(navigator.share){ try{ await navigator.share({title:'سبحة ورحمة', text, url}); }catch(e){} }
+      else{ window.open(`https://wa.me/?text=${encodeURIComponent(text+' '+url)}`,'_blank'); }
+    });
+
+    // نافذة ترحيب أول مرة
+    function maybeShowModal(){
+      const shownKey = 'tasbeeh_pro_modal_shown';
+      if(!localStorage.getItem(shownKey)){
+        welcomeModal.style.display='flex';
+        closeModal.addEventListener('click', ()=>{ welcomeModal.style.display='none'; localStorage.setItem(shownKey,'1'); });
+      }
+    }
+
+    // تهيئة أولية
+    (function init(){
+      // إذا تغير اليوم، نجهز مفتاح اليوم الجديد
+      if(!(todayKey in S.totals.days)) S.totals.days[todayKey]=0;
+      refreshUI(); maybeShowModal();
+      // مزامنة قيمة القوائم
+      soundSelect.value = 'beep';
+    })();
+  </script>
+</body>
+</html>
+<!-- قسم الأذكار -->
+<div class="azkar-card">
+  <h2>🌅🌙 الأذكار</h2>
+  <div class="buttons">
+    <button onclick="showAzkar('morning')">أذكار الصباح</button>
+    <button onclick="showAzkar('evening')">أذكار المساء</button>
+  </div>
+  <ul id="azkar-list"></ul>
+</div>
+
+<script>
+  // الأذكار
+  const azkar = {
+    morning: [
+      "أصبحنا وأصبح الملك لله، والحمد لله...",
+      "اللهم بك أصبحنا وبك أمسينا...",
+      "رضيت بالله ربًا، وبالإسلام دينًا، وبمحمد ﷺ نبيًا."
+    ],
+    evening: [
+      "أمسينا وأمسى الملك لله، والحمد لله...",
+      "اللهم بك أمسينا وبك أصبحنا...",
+      "اللهم ما أمسى بي من نعمة أو بأحد من خلقك فمنك وحدك لا شريك لك، فلك الحمد ولك الشكر."
+    ]
+  };
+
+  function showAzkar(time) {
+    const list = document.getElementById("azkar-list");
+    list.innerHTML = ""; // يمسح القديم
+    azkar[time].forEach(zikr => {
+      const li = document.createElement("li");
+      li.textContent = zikr;
+      list.appendChild(li);
+    });
+  }
+</script>
+
+<style>
+  .azkar-card {
+    margin: 20px auto;
+    padding: 15px;
+    max-width: 500px;
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+  .azkar-card h2 {
+    color: #00897b;
+    margin-bottom: 10px;
+  }
+  .buttons {
+    margin-bottom: 15px;
+  }
+  .buttons button {
+    margin: 5px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 10px;
+    background: #00897b;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  .buttons button:hover {
+    background: #00695c;
+  }
+  #azkar-list {
+    list-style: none;
+    padding: 0;
+    text-align: right;
+    direction: rtl;
+    color: #444;
+  }
+  #azkar-list li {
+    margin: 8px 0;
+    font-size: 17px;
+    line-height: 1.6;
+  }
+</style>
+<!-- قسم التقويم الهجري -->
+<div class="calendar-card">
+  <h2>📅 التقويم</h2>
+  <p id="gregorian-date"></p>
+  <p id="hijri-date"></p>
+</div>
+
+<script>
+  // جلب التاريخ الميلادي
+  const today = new Date();
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  document.getElementById("gregorian-date").textContent = 
+    "📌 التاريخ الميلادي: " + today.toLocaleDateString('ar-EG', options);
+
+  // تحويل للتاريخ الهجري
+  function getHijriDate(date) {
+    return new Intl.DateTimeFormat('ar-TN-u-ca-islamic', options).format(date);
+  }
+  document.getElementById("hijri-date").textContent = 
+    "🌙 التاريخ الهجري: " + getHijriDate(today);
+</script>
+
+<style>
+  .calendar-card {
+    margin: 20px auto;
+    padding: 15px;
+    max-width: 400px;
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    text-align: center;
+    font-size: 18px;
+    color: #333;
+  }
+  .calendar-card h2 {
+    color: #3f51b5;
+    margin-bottom: 10px;
+  }
+</style>
+<!-- عداد الحسنات -->
+<div class="counter-card">
+  <h2>🧮 عداد الحسنات</h2>
+  <p id="count">0</p>
+  <button onclick="increaseCount()">سبّح</button>
+  <button onclick="resetCount()">إعادة ضبط</button>
+</div>
+
+<script>
+  // جلب العدد من التخزين
+  let count = localStorage.getItem("tasbeehCount") || 0;
+  document.getElementById("count").textContent = count;
+
+  // دالة زيادة العدد
+  function increaseCount() {
+    count++;
+    document.getElementById("count").textContent = count;
+    localStorage.setItem("tasbeehCount", count);
+
+    // صوت خفيف عند التسبيح
+    let audio = new Audio("https://www.soundjay.com/button/beep-07.wav");
+    audio.play();
+  }
+
+  // دالة إعادة الضبط
+  function resetCount() {
+    count = 0;
+    document.getElementById("count").textContent = count;
+    localStorage.setItem("tasbeehCount", count);
+  }
+</script>
+
+<style>
+  .counter-card {
+    margin: 20px auto;
+    padding: 20px;
+    max-width: 400px;
+    background: #fefefe;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    text-align: center;
+    font-size: 20px;
+    color: #333;
+  }
+  .counter-card h2 {
+    color: #009688;
+    margin-bottom: 15px;
+  }
+  .counter-card button {
+    margin: 5px;
+    padding: 10px 15px;
+    font-size: 18px;
+    background: #009688;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .counter-card button:hover {
+    background: #00796b;
+  }
+  #count {
+    font-size: 30px;
+    margin: 10px 0;
+    color: #222;
+  }
+</style>
+<li class="dropdown">
+  <a href="#">🤲 الصدقات ▼</a>
+  <ul class="dropdown-content">
+    
+    <!-- صدقات مالية -->
+    <li class="dropdown-sub">
+      <a href="#">💰 صدقات مالية ▶</a>
+      <ul class="dropdown-sub-content">
+        <li><a href="#">إطعام مسكين</a></li>
+        <li><a href="#">التبرع لمستشفى</a></li>
+        <li><a href="#">شراء دواء لمريض</a></li>
+        <li><a href="#">كفالة يتيم</a></li>
+        <li><a href="#">شراء بطاطين للمحتاجين</a></li>
+        <li><a href="#">شراء شنط رمضان</a></li>
+        <li><a href="#">المشاركة في تجهيز عروسة</a></li>
+        <li><a href="#">دفع مصاريف دراسة ليتيم</a></li>
+        <li><a href="#">التبرع لملاجئ الأيتام</a></li>
+        <li><a href="#">المساهمة في سداد ديون الغارمين</a></li>
+        <li><a href="#">التبرع لمشروع إفطار صائم</a></li>
+        <li><a href="#">شراء أحذية للأطفال الفقراء</a></li>
+        <li><a href="#">التبرع لجمعيات خيرية</a></li>
+        <li><a href="#">شراء أدوات مدرسية للفقراء</a></li>
+        <li><a href="#">المساهمة في بناء بيوت للفقراء</a></li>
+        <li><a href="#">شراء لحم وتوزيعه</a></li>
+        <li><a href="#">شراء مياه للمحتاجين</a></li>
+        <li><a href="#">التبرع لعلاج العمليات الجراحية</a></li>
+        <li><a href="#">شراء كتب للطلاب الفقراء</a></li>
+        <li><a href="#">المساهمة في وقف خيري</a></li>
+        <li><a href="#">شراء دواء للحيوانات</a></li>
+        <li><a href="#">المساعدة في تجهيز مقابر</a></li>
+        <li><a href="#">دفع إيجار بيت لفقير</a></li>
+        <li><a href="#">شراء لبس العيد للأطفال</a></li>
+        <li><a href="#">التبرع لأبحاث السرطان</a></li>
+        <li><a href="#">المساهمة في حفر بئر ماء</a></li>
+        <li><a href="#">شراء أدوات منزلية للأرامل</a></li>
+        <li><a href="#">التبرع لملاجئ المسنين</a></li>
+        <li><a href="#">دفع مواصلات لطالب علم</a></li>
+        <li><a href="#">شراء مصاحف وتوزيعها</a></li>
+      </ul>
+    </li>
+
+    <!-- صدقات علمية -->
+    <li class="dropdown-sub">
+      <a href="#">📚 صدقات علمية ▶</a>
+      <ul class="dropdown-sub-content">
+        <li><a href="#">نشر العلم النافع</a></li>
+        <li><a href="#">التدريس مجانا</a></li>
+        <li><a href="#">كتابة مقالات مفيدة</a></li>
+        <li><a href="#">تصوير شروحات أونلاين</a></li>
+        <li><a href="#">إنشاء كورسات مجانية</a></li>
+        <li><a href="#">طباعة كتب دينية</a></li>
+        <li><a href="#">ترجمة كتب نادرة</a></li>
+        <li><a href="#">إعطاء دروس خصوصية ليتيم</a></li>
+        <li><a href="#">إهداء كتب علمية</a></li>
+        <li><a href="#">عمل موقع تعليمي مجاني</a></li>
+        <li><a href="#">تقديم ورش مجانية</a></li>
+        <li><a href="#">عمل قناة تعليمية</a></li>
+        <li><a href="#">تعليم القرآن للأطفال</a></li>
+        <li><a href="#">تعليم القراءة للكبار</a></li>
+        <li><a href="#">مساعدة طالب بحث علمي</a></li>
+        <li><a href="#">تصميم إنفوجرافيك تعليمي</a></li>
+        <li><a href="#">شرح برامج مجانية</a></li>
+        <li><a href="#">إعطاء دروس في التنمية البشرية</a></li>
+        <li><a href="#">المساعدة في أبحاث علمية</a></li>
+        <li><a href="#">عمل قناة للأطفال مفيدة</a></li>
+      </ul>
+    </li>
+
+    <!-- صدقات جارية -->
+    <li class="dropdown-sub">
+      <a href="#">🌳 صدقات جارية ▶</a>
+      <ul class="dropdown-sub-content">
+        <li><a href="#">حفر بئر ماء</a></li>
+        <li><a href="#">بناء مسجد</a></li>
+        <li><a href="#">زرع شجرة</a></li>
+        <li><a href="#">وقف أرض زراعية</a></li>
+        <li><a href="#">بناء مستشفى خيري</a></li>
+        <li><a href="#">بناء مدرسة</a></li>
+        <li><a href="#">إنشاء مكتبة عامة</a></li>
+        <li><a href="#">إهداء أجهزة حاسوب للطلاب</a></li>
+        <li><a href="#">تأسيس دار تحفيظ قرآن</a></li>
+        <li><a href="#">إنشاء عيادة طبية</a></li>
+        <li><a href="#">بناء جسر أو طريق</a></li>
+        <li><a href="#">ترميم بيوت قديمة للفقراء</a></li>
+        <li><a href="#">إنشاء محطة طاقة شمسية</a></li>
+        <li><a href="#">بناء مركز تدريب مهني</a></li>
+        <li><a href="#">إنشاء دار أيتام</a></li>
+        <li><a href="#">تأسيس مطبعة للمصاحف</a></li>
+        <li><a href="#">مشاركة في وقف خيري</a></li>
+        <li><a href="#">إنشاء موقع دعوي</a></li>
+        <li><a href="#">ترميم مدارس</a></li>
+        <li><a href="#">إقامة مشروعات بيئية</a></li>
+      </ul>
+    </li>
+
+    <!-- صدقات معنوية -->
+    <li class="dropdown-sub">
+      <a href="#">🤝 صدقات معنوية ▶</a>
+      <ul class="dropdown-sub-content">
+        <li><a href="#">الابتسامة في وجه الناس</a></li>
+        <li><a href="#">الكلمة الطيبة</a></li>
+        <li><a href="#">إعانة محتاج</a></li>
+        <li><a href="#">الإصلاح بين الناس</a></li>
+        <li><a href="#">الدعاء للآخرين</a></li>
+        <li><a href="#">زيارة مريض</a></li>
+        <li><a href="#">التخفيف عن مهموم</a></li>
+        <li><a href="#">الإرشاد للطريق</a></li>
+        <li><a href="#">المساعدة في حمل أغراض</a></li>
+        <li><a href="#">مساعدة كبار السن</a></li>
+        <li><a href="#">التطوع في خدمة عامة</a></li>
+        <li><a href="#">المشاركة في تنظيف مسجد</a></li>
+        <li><a href="#">تعليم الأطفال الأدب</a></li>
+        <li><a href="#">الدفاع عن مظلوم</a></li>
+        <li><a href="#">إدخال السرور على قلب مسلم</a></li>
+        <li><a href="#">إصلاح ذات البين</a></li>
+        <li><a href="#">إكرام الضيف</a></li>
+        <li><a href="#">رد السلام</a></li>
+        <li><a href="#">مساعدة جار</a></li>
+        <li><a href="#">العفو عن المسيء</a></li>
+      </ul>
+    </li>
+
+  </ul>
+</li>
+<section id="hadith" style="padding: 30px; text-align: center;">
+  <h2 style="margin-bottom: 20px; color: #2c3e50;">🌸 أحاديث نبوية عن الذكر والصدقة 🌸</h2>
+  
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+    
+    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+      <p>قال رسول الله ﷺ: "كلمتان خفيفتان على اللسان ثقيلتان في الميزان حبيبتان إلى الرحمن: سبحان الله وبحمده سبحان الله العظيم"</p>
+    </div>
+
+    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+      <p>قال رسول الله ﷺ: "من تصدق بعدل تمرة من كسب طيب -ولا يقبل الله إلا الطيب- فإن الله يقبلها بيمينه ثم يربيها لصاحبها حتى تكون مثل الجبل"</p>
+    </div>
+
+    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+      <p>قال رسول الله ﷺ: "الصدقة تطفئ الخطيئة كما يطفئ الماء النار"</p>
+    </div>
+
+    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+      <p>قال رسول الله ﷺ: "من قال سبحان الله العظيم وبحمده غرست له نخلة في الجنة"</p>
+    </div>
+
+  </div>
+</section>
+<body>
+    <div id="duaa"></div>
+</body>
